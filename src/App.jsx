@@ -27,65 +27,66 @@ const client = generateClient({
 });
 
 export default function App() {
-  const [notes, setNotes] = useState([]);
+  const [clubs, setClubs] = useState([]);
 
   useEffect(() => {
-    fetchNotes();
+    fetchClubs();
   }, []);
 
-  async function fetchNotes() {
-    const { data: notes } = await client.models.Note.list();
+  async function fetchClubs() {
+    const { data: clubs } = await client.models.Club.list();
     await Promise.all(
-      notes.map(async (note) => {
-        if (note.image) {
+      clubs.map(async (club) => {
+        if (club.image) {
           const linkToStorageFile = await getUrl({
-            path: ({ identityId }) => `media/${identityId}/${note.image}`,
+            path: ({ identityId }) => `media/${identityId}/${club.image}`,
           });
           console.log(linkToStorageFile.url);
-          note.image = linkToStorageFile.url;
+          club.image = linkToStorageFile.url;
         }
-        return note;
+        return club;
       })
     );
-    console.log(notes);
-    setNotes(notes);
+    console.log(clubs);
+    setClubs(clubs);
   }
 
-  async function createNote(event) {
+  async function createClub(event) {
     event.preventDefault();
     const form = new FormData(event.target);
     console.log(form.get("image").name);
 
-    const { data: newNote } = await client.models.Note.create({
+    const { data: newClub } = await client.models.Club.create({
       name: form.get("name"),
       description: form.get("description"),
+      deadline: form.get("deadline"),
       image: form.get("image").name,
     });
 
-    console.log(newNote);
-    if (newNote.image)
-      if (newNote.image)
+    console.log(newClub);
+    if (newClub.image)
+      if (newClub.image)
         await uploadData({
-          path: ({ identityId }) => `media/${identityId}/${newNote.image}`,
+          path: ({ identityId }) => `media/${identityId}/${newClub.image}`,
 
           data: form.get("image"),
         }).result;
 
-    fetchNotes();
+    fetchClubs();
     event.target.reset();
   }
 
-  async function deleteNote({ id }) {
-    const toBeDeletedNote = {
+  async function deleteClub({ id }) {
+    const toBeDeletedClub = {
       id: id,
     };
 
-    const { data: deletedNote } = await client.models.Note.delete(
-      toBeDeletedNote
+    const { data: deletedClub } = await client.models.Club.delete(
+      toBeDeletedClub
     );
-    console.log(deletedNote);
+    console.log(deletedClub);
 
-    fetchNotes();
+    fetchClubs();
   }
 
   return (
@@ -99,8 +100,8 @@ export default function App() {
           width="70%"
           margin="0 auto"
         >
-          <Heading level={1}>My Notes App</Heading>
-          <View as="form" margin="3rem 0" onSubmit={createNote}>
+          <Heading level={1}>My Clubs App</Heading>
+          <View as="form" margin="3rem 0" onSubmit={createClub}>
             <Flex
               direction="column"
               justifyContent="center"
@@ -109,16 +110,24 @@ export default function App() {
             >
               <TextField
                 name="name"
-                placeholder="Note Name"
-                label="Note Name"
+                placeholder="Club Name"
+                label="Club Name"
                 labelHidden
                 variation="quiet"
                 required
               />
               <TextField
                 name="description"
-                placeholder="Note Description"
-                label="Note Description"
+                placeholder="Club Description"
+                label="Club Description"
+                labelHidden
+                variation="quiet"
+                required
+              />
+              <TextField
+                name="deadline"
+                placeholder="Application Deadline"
+                label="Application Deadline"
                 labelHidden
                 variation="quiet"
                 required
@@ -132,12 +141,12 @@ export default function App() {
               />
 
               <Button type="submit" variation="primary">
-                Create Note
+                Create Club
               </Button>
             </Flex>
           </View>
           <Divider />
-          <Heading level={2}>Current Notes</Heading>
+          <Heading level={2}>Current Clubs</Heading>
           <Grid
             margin="3rem 0"
             autoFlow="column"
@@ -145,9 +154,9 @@ export default function App() {
             gap="2rem"
             alignContent="center"
           >
-            {notes.map((note) => (
+            {clubs.map((club) => (
               <Flex
-                key={note.id || note.name}
+                key={club.id || club.name}
                 direction="column"
                 justifyContent="center"
                 alignItems="center"
@@ -158,21 +167,22 @@ export default function App() {
                 className="box"
               >
                 <View>
-                  <Heading level="3">{note.name}</Heading>
+                  <Heading level="3">{club.name}</Heading>
                 </View>
-                <Text fontStyle="italic">{note.description}</Text>
-                {note.image && (
+                <Text fontStyle="italic">{club.description}</Text>
+                <Text fontWeight="bold">Application Deadline: {club.deadline}</Text>
+                {club.image && (
                   <Image
-                    src={note.image}
-                    alt={`visual aid for ${notes.name}`}
-                    style={{ width: 400 }}
+                    src={club.image}
+                    alt={`visual aid for ${clubs.name}`}
+                    style={{ width: 100 }}
                   />
                 )}
                 <Button
                   variation="destructive"
-                  onClick={() => deleteNote(note)}
+                  onClick={() => deleteClub(club)}
                 >
-                  Delete note
+                  Delete club
                 </Button>
               </Flex>
             ))}
